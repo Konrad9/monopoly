@@ -14,7 +14,7 @@ import progressbar
 # simulation settings
 nPlayers = 4
 nMoves = 1000
-nSimulations = 1000
+nSimulations = 10000
 seed = ""  # "" for none
 shufflePlayers = True
 
@@ -45,8 +45,9 @@ expUnspendableCash = 0  # unspendable money
 expBuildCheapest = False
 expBuildExpensive = False
 expBuildThree = False
-variableStartingMoney = []# [1370, 1460, 1540, 1630] # [] to disable
-
+variableStartingMoney = [] #[1375, 1465, 1535, 1625] # [] to disable
+expOnlyTradeDown = []# ["exp"] #  players only trades down
+expOnlyTradeUp = []# ["exp"] #players who only trades up
 
 # reporting settings
 OUT_WIDTH = 80
@@ -343,6 +344,20 @@ class Player:
                     log.write("Trade match: " + self.name + " wants " + board.b[IWant].name +
                               ", and " + ownerOfWanted.name + " wants " + board.b[TheyWant].name, 3)
 
+                    # Experiment: exp only trades Down (only gets Cheaper):
+                    if len(expOnlyTradeDown)>0:
+                        if self.name in expOnlyTradeDown and board.b[IWant].cost_base > board.b[TheyWant].cost_base:
+                            return False
+                        if ownerOfWanted.name in expOnlyTradeDown and board.b[IWant].cost_base < board.b[TheyWant].cost_base:
+                            return False
+                    # Exp only trade up (gets more expensive)
+                    if len(expOnlyTradeUp)>0:
+                        if self.name in expOnlyTradeUp and board.b[IWant].cost_base < board.b[TheyWant].cost_base:
+                            return False
+                        if ownerOfWanted.name in expOnlyTradeUp and board.b[IWant].cost_base > board.b[TheyWant].cost_base:
+                            return False
+
+                    
                     # Compensate that one plot is cheaper than another one
                     if board.b[IWant].cost_base < board.b[TheyWant].cost_base:
                         cheaperOne, expensiveOne = IWant, TheyWant
