@@ -32,7 +32,7 @@ settingsAllowUnEqualDevelopment = False  # default = False
 behaveUnspendableCash = 0  # Money I want to will have left after buying stuff
 behaveUnmortgageCoeff = 3  # repay mortgage if you have times this cash
 behaveDoTrade = True  # willing to trade property
-behaveDoThreeWayTrade = True  # willing to trade property three-way
+behaveDoThreeWayTrade = False  # willing to trade property three-way
 behaveBuildCheapest = False
 behaveBuildRandom = False
 
@@ -45,9 +45,10 @@ expUnspendableCash = 0  # unspendable money
 expBuildCheapest = False
 expBuildExpensive = False
 expBuildThree = False
-variableStartingMoney = [] #[1375, 1465, 1535, 1625] # [] to disable
-expOnlyTradeDown = []# ["exp"] #  players only trades down
+variableStartingMoney = [] # [1375, 1465, 1535, 1625] # [] to disable
+expOnlyTradeDown = ["exp"] # ["exp"] #  players only trades down
 expOnlyTradeUp = []# ["exp"] #players who only trades up
+expTradeDownUpcharge = 2 # Trade Down player gets times this for price difference
 
 # reporting settings
 OUT_WIDTH = 80
@@ -344,11 +345,17 @@ class Player:
                     log.write("Trade match: " + self.name + " wants " + board.b[IWant].name +
                               ", and " + ownerOfWanted.name + " wants " + board.b[TheyWant].name, 3)
 
+
                     # Experiment: exp only trades Down (only gets Cheaper):
                     if len(expOnlyTradeDown)>0:
                         if self.name in expOnlyTradeDown and board.b[IWant].cost_base > board.b[TheyWant].cost_base:
                             return False
                         if ownerOfWanted.name in expOnlyTradeDown and board.b[IWant].cost_base < board.b[TheyWant].cost_base:
+                            return False
+                        # for the experient: others should skip every other trade, to compensate half of effect
+                        if ownerOfWanted.name not in expOnlyTradeDown \
+                           and self.name not in expOnlyTradeDown \
+                           and ( abs(board.b[IWant].cost_base - board.b[TheyWant].cost_base) // 20 ) % 2 == 0:
                             return False
                     # Exp only trade up (gets more expensive)
                     if len(expOnlyTradeUp)>0:
@@ -365,6 +372,11 @@ class Player:
                         cheaperOne, expensiveOne = TheyWant, IWant
                     priceDiff = board.b[expensiveOne].cost_base - \
                         board.b[cheaperOne].cost_base
+                    # experiment: increase the price compensation
+                    if board.b[expensiveOne].owner.name == "exp":
+                        priceDiff *= expTradeDownUpcharge
+                        log.write("Increased price diff", 3)
+                        
                     log.write("Price difference is $" + str(priceDiff), 3)
 
                     # make sure they they can pay the money
